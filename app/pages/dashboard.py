@@ -1,7 +1,6 @@
 import streamlit as st
 import sys
 import os
-import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -40,7 +39,7 @@ def show_dashboard():
     promedios = stats['averages']
     promedio_general = sum(promedios.values()) / len(promedios)
     
-    # Elegir mensaje con tono paisa
+    # Elegir mensaje con tono paisa (igual que antes)
     if promedio_general >= 4:
         mensaje = """
         Ay, Luis Carlos, ¡qué bonito!  
@@ -64,7 +63,7 @@ def show_dashboard():
         Todo es parte del proceso, ¿cierto?
         """
     
-    # Mostrar reflexión con HTML renderizado correctamente
+    # Mostrar reflexión con HTML
     st.markdown(f"""
     <div style="
         background: #ffffff;
@@ -145,65 +144,41 @@ def show_dashboard():
     
     st.markdown("---")
     
-    # --- SECCIÓN 3: EVOLUCIÓN ---
+    # --- SECCIÓN 3: EVOLUCIÓN (GRÁFICO NATIVO DE STREAMLIT) ---
     st.markdown("## 📈 Evolución de tus indicadores")
     
-    if len(stats['trends']) > 1:
-        import plotly.graph_objects as go
-        
-        df = pd.DataFrame(stats['trends'])
-        df_recent = df.tail(8).copy()
-        
-        fig = go.Figure()
-        
-        colores = {
-            'analysis': '#2563eb',
-            'flexibility': '#10b981',
-            'delegation': '#f59e0b',
-            'communication': '#8b5cf6',
-            'development': '#ec4899',
-            'serenity': '#06b6d4',
-            'balance': '#f97316'
+    # Obtener los últimos registros para el gráfico
+    records = db.query(WeeklyRecord).filter(
+        WeeklyRecord.user_id == user_id
+    ).order_by(WeeklyRecord.date.asc()).all()
+    
+    if len(records) > 1:
+        # Preparar datos para el gráfico de líneas
+        semanas = [r.week_number for r in records]
+        datos = {
+            "Análisis": [r.analysis_score for r in records],
+            "Flexibilidad": [r.flexibility_score for r in records],
+            "Delegación": [r.delegation_score for r in records],
+            "Comunicación": [r.communication_score for r in records],
+            "Desarrollo": [r.development_score for r in records],
+            "Serenidad": [r.serenity_score for r in records],
+            "Balance": [r.balance_score for r in records]
         }
         
-        for indicador, color in colores.items():
-            if indicador in df_recent.columns:
-                fig.add_trace(go.Bar(
-                    name=nombres_indicadores.get(indicador, indicador),
-                    x=df_recent['week'].astype(str),
-                    y=df_recent[indicador],
-                    marker_color=color,
-                    text=df_recent[indicador].round(1),
-                    textposition='outside',
-                    width=0.8
-                ))
+        # Convertir a formato para st.line_chart
+        import pandas as pd
+        # (pandas solo se usa aquí, pero si falla, podemos hacerlo con listas)
+        # Usamos un DataFrame solo para este gráfico
+        df = pd.DataFrame(datos, index=semanas)
+        st.line_chart(df)
         
-        fig.update_layout(
-            barmode='group',
-            title="Evolución por semana",
-            xaxis_title="Semana",
-            yaxis_title="Puntaje (1-5)",
-            yaxis=dict(range=[0, 5.5]),
-            height=400,
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="right",
-                x=1
-            ),
-            hovermode='x unified',
-            plot_bgcolor='rgba(0,0,0,0)',
-            paper_bgcolor='rgba(0,0,0,0)'
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
+        st.caption("Evolución de tus indicadores semana a semana.")
     else:
         st.info("📊 Necesitas al menos 2 semanas de registros para ver tu evolución.")
     
     st.markdown("---")
     
-    # --- SECCIÓN 4: ESTADO ACTUAL ---
+    # --- SECCIÓN 4: ESTADO ACTUAL (BARRAS HORIZONTALES) ---
     st.markdown("## 🎯 Estado actual de tus indicadores")
     
     ultimo = stats.get('latest')
