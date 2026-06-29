@@ -5,6 +5,9 @@ import os
 # Agregar la carpeta raíz al path para poder importar app
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Importar la función para crear tablas (se ejecutará al inicio)
+from app.models.database import create_tables
+
 # Configuración de la página
 st.set_page_config(
     page_title="Digital Leader Book",
@@ -12,6 +15,13 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# ✅ CREAR TABLAS SI NO EXISTEN (¡Esto resuelve el error!)
+try:
+    create_tables()
+except Exception as e:
+    st.error(f"Error al conectar con la base de datos: {e}")
+    st.stop()
 
 # Inicializar estado de sesión
 if 'authenticated' not in st.session_state:
@@ -61,11 +71,9 @@ def main():
         elif nav_page == "Historial":
             from app.pages.history import show_history
             show_history()
-            
         elif nav_page == "Perfil CT":
             from app.pages.profile import show_profile
             show_profile()
-            
         elif nav_page == "Retroalimentación IA":
             from app.pages.ai_feedback import show_ai_feedback
             show_ai_feedback()
