@@ -1,21 +1,13 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Jun 28 13:11:00 2026
-
-@author: user1
-"""
-
+import os
 from sqlalchemy import create_engine, Column, String, Integer, DateTime, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-import os
 from dotenv import load_dotenv
 
-# Cargar variables de entorno
 load_dotenv()
 
-# Obtener URL de la base de datos
+# Obtener URL de la base de datos (debe funcionar local y en Render)
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 # Crear el motor de conexión
@@ -81,6 +73,7 @@ class WeeklyRecord(Base):
     
     # Retroalimentación IA
     ai_feedback = Column(Text, nullable=True)
+    ct_profile = Column(Text, nullable=True)  # Guardar perfil CT para contexto
     
     created_at = Column(DateTime, default=datetime.now)
     updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
@@ -93,7 +86,7 @@ def get_db():
     finally:
         db.close()
 
-# Crear tablas
+# Función para crear las tablas (¡Esta es la clave!)
 def create_tables():
     Base.metadata.create_all(bind=engine)
     print("✅ Tablas creadas correctamente")
